@@ -46,8 +46,8 @@ for k=1:size(data{1},1)
     
     idx2 = find(ismember(data_d_cor{1}, data{2}{k}));
     if isempty(idx2)
-        d_cor = mean(data_d_cor{2});
-        d_cor_std = std(data_d_cor{2});
+        d_cor = mean(data_d_cor{2}(:,1));
+        d_cor_std = std(data_d_cor{2}(:,1));
     elseif length(idx2)>=2
         d_cor = data_d_cor{2}(idx2(end),1);
         d_cor_std = data_d_cor{2}(idx2(1),2);
@@ -56,7 +56,7 @@ for k=1:size(data{1},1)
         d_cor_std = data_d_cor{2}(idx2,2);
     end
     
-    fprintf(fid,'%10.4e, %10.4e, %10.4e, %.3f, %3d, %s, %s, %.4f, %.4f, %.4f, %.4f\r\n',...
+    fprintf(fid,'%10.4e, %10.4e, %10.4e, %6.3f, %3d, %s, %s, %.4f, %.4f, %.4f, %.4f\r\n',...
         data{1}(k,1),data{1}(k,2),data{1}(k,3),data{1}(k,4),data{1}(k,5),data{2}{k},...
         date,f_cor,f_cor_std,d_cor,d_cor_std);
 end

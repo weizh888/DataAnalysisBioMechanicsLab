@@ -3,17 +3,18 @@ clc
 
 global date_format startInd existExtensionCol
 % Define Date format corresponding to the folder names.
-date_format = 1; % Folder name: 2016-01-01
+% date_format = 1; % Folder name: 2016-01-01
 % date_format = 0; % Folder name:20160101
-
+date_format = 1;
 % For different naming method, such as '00 F vs LR_v200_unfold.txt' and 00 v200_unfold.txt
 % startInd = 12; % '00 F vs LR_v200_unfold.txt'
-startInd = 4; % '00 v200_unfold.txt'
-speedRange = startInd:startInd+5;
-existExtensionCol = 0; % If Extension column exists, remove it; else, don't remvove.
+% startInd = 4; % '00 v200_unfold.txt'
+startInd = 12;
+speedRange = startInd:startInd+3;
+existExtensionCol = 1; % If Extension column exists, remove it; else, don't remvove.
 
 % Get a list of all files and folders in this folder.
-folder_path = 'E:\00 Research\00 Projects\Project - GPIb-IX\Analysis\GPIb-IX WT_enzyme vs WM23';
+folder_path = 'E:\00 Research\00 Projects\Project - GPIb-IX\Analysis\Stalk Region';
 listing = dir(folder_path);
 listing(1:2) = [];
 % Get a logical vector that tells which is a directory.
@@ -55,7 +56,7 @@ for k = 1 : length(subFolders)
         data_f_cor{1}(idx1,:) = [];
         data_f_cor{2}(idx1,:) = [];
     else
-        data_f_cor{1} = 'NA';
+        data_f_cor{1} = '';
         data_f_cor{2} = 1;
     end
     if exist(d_cor_path,'file')==2
@@ -65,8 +66,8 @@ for k = 1 : length(subFolders)
         data_d_cor{1}(idx2,:) = [];
         data_d_cor{2}(idx2,:) = [];
     else
-        data_f_cor{1} = 'NA';
-        data_f_cor{2} = [1, 0];
+        data_d_cor{1} = '';
+        data_d_cor{2} = [1, 0];
     end
     
     %% Process data files
@@ -74,55 +75,58 @@ for k = 1 : length(subFolders)
         for j=1:length(file_list_new)
             data_path = [folder_path '/' subFolders(k).name '/' file_list_new{j}];
             fid = fopen(data_path, 'r');
-            data = textscan(fid, '%f %f %f %f %f %f %s', 'HeaderLines', 1, 'CollectOutput', 1);
             % Get the pulling speed.
             switch file_list_new{j}(speedRange) % (12:15)
                 case 'v100'
                     speed = '100';
-                    typeRange = speedRange+5; % 17:22
+                    typeRange = startInd+5:startInd+10; % 17:22
                 case 'v200'
                     speed = '200';
-                    typeRange = speedRange+5;
+                    typeRange = startInd+5:startInd+10;
                 case 'v400'
                     speed = '400';
-                    typeRange = speedRange+5;
+                    typeRange = startInd+5:startInd+10;
                 case 'v500'
                     speed = '500';
-                    typeRange = speedRange+5;
+                    typeRange = startInd+5:startInd+10;
                 case 'v750'
                     speed = '750';
-                    typeRange = speedRange+5;
+                    typeRange = startInd+5:startInd+10;
                 case 'v300'
                     speed = '300';
-                    typeRange = speedRange+5;
+                    typeRange = startInd+5:startInd+10;
                 case 'v250'
                     speed = '250';
-                    typeRange = speedRange+5;
+                    typeRange = startInd+5:startInd+10;
                 case 'v150'
                     speed = '150';
-                    typeRange = speedRange+5;
+                    typeRange = startInd+5:startInd+10;
                 case 'v50_'
                     speed = '50';
-                    typeRange = speedRange+4; % Move one letter forward.
+                    typeRange = startInd+4:startInd+9; % Move one letter forward.
             end
             
             % get the event type: unfold, refold, or rupture
             switch file_list_new{j}(typeRange)
                 case 'unfold'
                     type = 'unfold';
-                    if existExtensionCol==1
-                        data{1}(:,4) = []; % Remove one column, i.e., the extension column.
-                    end
                 case 'refold'
                     type = 'refold';
-                    if existExtensionCol==1
-                        data{1}(:,4) = [];
-                    end
                 case 'ruptur'
                     type = 'rupture';
             end
+            if existExtensionCol==1
+                if strcmp(type,'unfold') || strcmp(type,'refold')
+                    data = textscan(fid, '%f %f %f %f %f %f %s', 'HeaderLines', 1, 'CollectOutput', 1);
+                    data{1}(:,4) = []; % Remove one column, i.e., the extension column.
+                else
+                    data = textscan(fid, '%f %f %f %f %f %s', 'HeaderLines', 1, 'CollectOutput', 1);
+                end
+            else
+                data = textscan(fid, '%f %f %f %f %f %s %*[^\n]', 'HeaderLines', 1, 'CollectOutput', 1);
+            end
             
-            disp([d ': ' type ', ' num2str(speed) 'nm/s'])
+            disp([d ': ' num2str(speed) 'nm/s - ' type])
             write_to_file(speed, type, date, data, data_f_cor, data_d_cor);
         end
     end
