@@ -52,3 +52,5 @@ else
     disp('The file doesn''t exist. Please input another file.')
     return
 end
+
+close all;
