@@ -2,7 +2,7 @@
 % Lehigh University
 
 % clearvars -except filename data_files
-clear all;
+clear;
 close all; clc;
 
 global filename file_path threshold_force
@@ -53,4 +53,4 @@ else
     return
 end
 
-close all;
+fclose('all');
