@@ -28,7 +28,7 @@ for k = 1 : length(subFolders)
     d = subFolders(k).name;
     switch date_format
         case 1 % Date: 2017-01-31
-            date = [d(6:7) '/' d(9:10) '/' d(1:4)];
+            date = [d(6:7) '/' d(9:10) '/' d(1:4)]; % MM/DD/YYYY
             % date = datestr([d(1:4) '/' d(6:7) '/' d(9:10)]);
         case 0 % Date: 20170131
             date = [d(5:6) '/' d(7:8) '/' d(1:4)];

@@ -12,7 +12,7 @@ filename = input('Please input the data file to analyze: \n', 's');
 file_path = ['data/' ExpDate '/' filename '/']; % set file path
 ComFile = ['data/' filename 'COM.txt'];
 if exist(ComFile, 'file')    
-    ExpDate = input('Please input the date of experiment: \n', 's');
+    ExpDate = input('Please input the experimental date (YYYY-MM-DD): \n', 's');
     if ~exist([pwd '/data/' ExpDate '/' filename],'dir') % create a new subfolder, if it doesn't exist
         mkdir([pwd '/data/' ExpDate], filename);
     end

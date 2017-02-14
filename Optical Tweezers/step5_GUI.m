@@ -20,10 +20,6 @@ function varargout = step5_GUI(varargin)
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Edit the above text to modify the response to help step5_GUI
-
-% Last Modified by GUIDE v2.5 13-Dec-2016 16:43:15
-
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
@@ -59,18 +55,18 @@ handles.output = hObject;
 clc;
 set(handles.axes1,'xtick',[],'ytick',[]);
 % load guidata
-global kB T filename file_path Index_curves SpeedValue ExpDate
+global kB T filename file_path index_curves speed ExpDate f_cor_path d_cor_path
 fid = fopen('InfoForStep5.txt','r');
 M = textscan(fid,'%s','Delimiter',' ');
 ExpDate = M{1}{2};
 filename = M{1}{4};
-SpeedValue = str2double(M{1}{8});
-Index_curves = cell2mat(cellfun(@str2num,M{:}(11:end),'un',0).');
+speed = str2double(M{1}{8});
+index_curves = cell2mat(cellfun(@str2num,M{:}(11:end),'un',0).');
 kB = 1.3806503*1e-23; % Boltzmann constant
 T = 273.15+24; % absolute temperature
 handles.ForceCorFactor = 1;
 handles.TargetForce = 67; % DNA OS force, unit: pN
-if SpeedValue >= 150
+if speed >= 150
     handles.smoothSpan = 3; % number of points for smoothing
 else
     handles.smoothSpan = 7; % number of points for smoothing
@@ -83,41 +79,58 @@ handles.rupture_num = 0;
 handles.shift_true = 1;
 handles.shiftDist = 50; % unit: nm
 handles.XSpan = 2500;
-% SpeedValue = 200;
+% speed = 200;
 set(handles.file_name, 'String', filename);
-set(handles.speed_value, 'String', SpeedValue);
+set(handles.speed_value, 'String', speed);
 set(handles.target_force, 'String', handles.TargetForce);
 set(handles.smooth_span, 'String', handles.smoothSpan);
 set(handles.shift_dist, 'String', handles.shiftDist);
 
 % load list box
+f_cor_path = ['data/' ExpDate '/Force_Cor_Factor.txt']; % force correction file
+d_cor_path = ['data/' ExpDate '/Distance_Cor_Factor.txt']; % distance correction file
 file_path = ['data/' ExpDate '/' filename '/'];
 source_files = dir(fullfile(file_path, '*.txt'));
-single_cycle_file = [ file_path 'Dist_Force_Time ']; % one approaching/retracting process
-single_cycle_smooth_file = [ file_path 'DFT ']; % one approaching/retracting process
+single_cycle_file = [file_path 'Dist_Force_Time ']; % one approaching/retracting process
+single_cycle_smooth_file = [file_path 'DFT ']; % one approaching/retracting process
+
+% Get Distance Correct Factor
+if exist(d_cor_path,'file')==2
+    fid1 = fopen(d_cor_path, 'r');
+    data_d_cor = textscan(fid1, '%s %f %f', 'HeaderLines', 0, 'CollectOutput', 1);
+    idx1 = isnan(data_d_cor{2}); % Remove NaN
+    idx2 = isinf(data_d_cor{2}); % Remove Inf
+    data_d_cor{2}(idx1,:) = [];
+    data_d_cor{2}(idx2,:) = [];    
+    DistCorFactor = data_d_cor{2}(end,1); % Use the last correction factor
+    DistCorFactorSTD = data_d_cor{2}(end,2);
+else
+    DistCorFactor = 1.0;
+    DistCorFactorSTD = 0.0;
+end
 
 % check and remove these files not exist in selected curves
-for i = 1:length(Index_curves)
-    file1 = [single_cycle_file num2str(Index_curves(i)) 'R.txt'];
-    file2 = [single_cycle_smooth_file num2str(Index_curves(i)) 'R.txt'];
+for i = 1:length(index_curves)
+    file1 = [single_cycle_file num2str(index_curves(i)) 'R.txt'];
+    file2 = [single_cycle_smooth_file num2str(index_curves(i)) 'R.txt'];
     if (exist(file1, 'file')~=2) && (exist(file2, 'file')~=2)
-        Index_curves(i) = NaN;
+        index_curves(i) = NaN;
     end
 end
-Index_curves = Index_curves(~isnan(Index_curves));
+index_curves = index_curves(~isnan(index_curves));
 
 handles.ForceIndex = 1;
-ForceNum = Index_curves(handles.ForceIndex);
+ForceNum = index_curves(handles.ForceIndex);
 
 str1 = [single_cycle_file num2str(ForceNum) 'A.txt'];
 str2 = [single_cycle_file num2str(ForceNum) 'R.txt'];
 
 % check if the data is smoothed or not
-flag = 0; % check whether to correct force
+flag = 0; % check whether the force is corrected
 if exist(str2, 'file') ~= 2
     str1 = [single_cycle_smooth_file num2str(ForceNum) 'A.txt'];
     str2 = [single_cycle_smooth_file num2str(ForceNum) 'R.txt'];
-    flag = 1;
+    flag = 1; % The force is corrected.
 end
 
 handles.data_retract_raw = [];
@@ -132,10 +145,11 @@ y_indent = 0;
 
 handles.data_retract_raw = dlmread(str2);
 extension_R_cor = handles.data_retract_raw(:,1) - x_indent; % unit: nm
-if flag==1
-    force_R_cor = (handles.data_retract_raw(:,2) - y_indent);
-else
-    force_R_cor = (handles.data_retract_raw(:,2) - y_indent)*handles.ForceCorFactor; % unit: pN
+switch flag
+    case 1
+        force_R_cor = (handles.data_retract_raw(:,2) - y_indent);
+    case 0
+        force_R_cor = (handles.data_retract_raw(:,2) - y_indent)*handles.ForceCorFactor; % unit: pN
 end
 time_R_raw = handles.data_retract_raw(:,3); % unit:s for calculating loading rate dF/dt
 handles.data_retract_cor = [extension_R_cor force_R_cor time_R_raw];
@@ -169,10 +183,7 @@ if exist(str1, 'file') == 2 %
     hold off
 end
 xlabel('Extension (nm)');ylabel('Force (pN)');
-title(['Force vs Extension (# ' num2str(Index_curves(handles.ForceIndex)) ')'])
-% grid on
-% hdt = datacursormode;
-% set(hdt,'DisplayStyle','window');
+title(['Force vs Extension (# ' num2str(index_curves(handles.ForceIndex)) ')'])
 ylim([-5 75]); % set ylim
 
 xLimits = get(gca,'XLim'); yLimits = get(gca,'YLim');
@@ -190,30 +201,26 @@ handles.YSpan = yLimits(2)-yLimits(1);
 handles.axisRange = [xLimits yLimits];
 handles.axisRangeZoomed = [xLimits yLimits];
 handles.source_files = source_files;
-handles.Index_curves = Index_curves;
-handles.SpeedValue = SpeedValue;
+handles.index_curves = index_curves;
+handles.speed = speed;
 handles.ExpDate = ExpDate;
+handles.DistCorFactor = DistCorFactor;
+handles.DistCorFactorSTD = DistCorFactorSTD;
 % update_range handles structure
 guidata(hObject, handles);
 
 % --- Outputs from this function are returned to the command line.
 function varargout = step5_GUI_OutputFcn(hObject, eventdata, handles)
-% varargout  cell array for returning output args (see VARARGOUT);
-% hObject    handle to figure
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Get default command line output from handles structure
 varargout{1} = handles.output;
 
 function speed_value_Callback(hObject, eventdata, handles) %#ok<*DEFNU>
 % hObject    handle to speed_value (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-SpeedValue = str2double(get(handles.speed_value,'String'));
-set(handles.speed_value,'String',num2str(SpeedValue));
+speed = str2double(get(handles.speed_value,'String'));
+set(handles.speed_value,'String',num2str(speed));
 
-handles.SpeedValue = SpeedValue;
+handles.speed = speed;
 guidata(hObject, handles);
 
 % --- Executes during object creation, after setting all properties.
@@ -221,9 +228,6 @@ function speed_value_CreateFcn(hObject, eventdata, handles) %#ok<*INUSD>
 % hObject    handle to speed_value (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
@@ -234,15 +238,15 @@ function next_file_Callback(hObject, eventdata, handles)
 % hObject    handle to next_file (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global file_path Index_curves
-Index_curves = handles.Index_curves;
-if handles.ForceIndex<length(Index_curves) && length(Index_curves)>1
+global file_path index_curves
+index_curves = handles.index_curves;
+if handles.ForceIndex<length(index_curves) && length(index_curves)>1
     % read data file(s)
     handles.ForceIndex = handles.ForceIndex + 1;
 else
     handles.ForceIndex = handles.ForceIndex;
 end
-ForceNum = Index_curves(handles.ForceIndex);
+ForceNum = index_curves(handles.ForceIndex);
 
 single_cycle_file = [file_path 'Dist_Force_Time '];
 single_cycle_smooth_file = [file_path 'DFT '];
@@ -310,7 +314,7 @@ if exist(str1, 'file') == 2 %
 end
 hold off
 xlabel('Extension (nm)');ylabel('Force (pN)');
-title(['Force vs Extension (# ' num2str(Index_curves(handles.ForceIndex)) ')'])
+title(['Force vs Extension (# ' num2str(index_curves(handles.ForceIndex)) ')'])
 axis(handles.axisRangeZoomed);
 
 handles.unfolding_num = 0;
@@ -410,27 +414,33 @@ function save_unfold_Callback(hObject, eventdata, handles)
 global filename fid_unfold ExpDate
 
 handles.unfolding_num = handles.unfolding_num+1;
-SpeedValue = handles.SpeedValue;
-Index_curves = handles.Index_curves;
-ForceNum = Index_curves(handles.ForceIndex);
+speed = handles.speed;
+DistCorFactor = handles.DistCorFactor;
+DistCorFactorSTD = handles.DistCorFactorSTD;
+ForceCorFactor = handles.ForceCorFactor;
+index_curves = handles.index_curves;
+ForceNum = index_curves(handles.ForceIndex);
 StartPoint = handles.StartPoint;
 UnfoldPoint = handles.UnfoldPoint;
-unfold_distance = handles.UnfoldDistance;
+unfold_dist = handles.UnfoldDistance;
 dF = UnfoldPoint(1,2)-StartPoint(1,2);
 dt = UnfoldPoint(1,3)-StartPoint(1,3);
 loading_rate = dF/dt;
 % dx = UnfoldPoint(1,1)-StartPoint(1,1);
 
-Force_LR_unfold_all = ['data/00 v' num2str(SpeedValue) '_unfold.txt'];
+Force_LR_unfold_all = ['data/00 v' num2str(speed) '_unfold.csv'];
 if exist(Force_LR_unfold_all,'file')==2 % if file exists
     fid_unfold = fopen(Force_LR_unfold_all, 'a+'); % append new results
 else
     fid_unfold = fopen(Force_LR_unfold_all, 'w+');
-    fprintf(fid_unfold, '%9s   %s  %s  %s  %s  %s    %s      %s\r\n', 'LR(N/s)', 'Unfold_F(N)', 'Unfold_D(m)', 'Time(s)', 'Curve#', 'FileName', 'Date', 'F_cor');
+    fprintf(fid_unfold, '%s,%s,%s,%s,%s,%s,%s,%s,%s\r\n',...
+        'LR(N/s)', 'Unfold_F(N)', 'Unfold_D(m)', 'Time(s)',...
+        'Curve#', 'FileName', 'Date', 'F_cor', 'Ext_cor');
 end
 
-fprintf(fid_unfold,'%.4e  %.4e  %11.4e  %7.3f  %5d  %9s  %10s   %.4f\r\n',...
-    loading_rate*1e-12, UnfoldPoint(1,2)*1e-12, unfold_distance*1e-9, dt, ForceNum, filename, ExpDate, handles.ForceCorFactor);
+fprintf(fid_unfold,'%10.4e, %10.4e, %10.4e, %6.3f, %3d, %s, %s, %.4f, %.4f\r\n',...
+    loading_rate*1e-12, UnfoldPoint(1,2)*1e-12, unfold_dist*1e-9, dt, ...
+    ForceNum, filename, ExpDate, ForceCorFactor, DistCorFactor);
 fclose(fid_unfold);
 
 xLimits = get(gca,'XLim');
@@ -438,7 +448,7 @@ yLimits = get(gca,'YLim');
 
 handles.axisRangeZoomed = [xLimits yLimits];
 % [extension force time distance loading-rate]
-handles.UnfoldPoints(handles.unfolding_num,:) = [UnfoldPoint, unfold_distance, loading_rate];
+handles.UnfoldPoints(handles.unfolding_num,:) = [UnfoldPoint, unfold_dist, loading_rate];
 guidata(hObject, handles);
 
 
@@ -447,6 +457,25 @@ function start_point_2_Callback(hObject, eventdata, handles)
 % hObject    handle to start_point_2 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+data_approach = handles.data_approach;
+switch get(get(handles.shift_or_not,'SelectedObject'),'Tag')
+    case 'shift_true'
+        if ~isempty(handles.shift_dist)
+            handles.shiftDist = str2double(get(handles.shift_dist,'String'));
+        end        
+        data_approach(:,1) = data_approach(:,1)+handles.shiftDist;
+    case 'shift_false'
+        
+end
+dcm_obj = datacursormode(gcf);
+info = getCursorInfo(dcm_obj);
+p0 = info.Position;
+% index0 = data_approach(:,1)==p0(1,1);
+index0 = all(bsxfun(@eq,p0,data_approach(:,1:2)),2);
+StartPoint = data_approach(index0,:);
+
+handles.StartPoint = StartPoint;
+guidata(hObject, handles);
 
 % --- Executes on button press in refold_point.
 function refold_point_Callback(hObject, eventdata, handles)
@@ -454,6 +483,53 @@ function refold_point_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 % update retract data if there is a shift
+data_approach = handles.data_approach;
+switch get(get(handles.shift_or_not,'SelectedObject'),'Tag')
+    case 'shift_true'
+        if ~isempty(handles.shift_dist)
+            handles.shiftDist = str2double(get(handles.shift_dist,'String'));
+        end        
+        data_approach(:,1) = data_approach(:,1)+handles.shiftDist;
+    case 'shift_false'
+        
+end
+
+dcm_obj = datacursormode(gcf);
+info = getCursorInfo(dcm_obj);
+p2 = info.Position;
+% index1 = data_approach(:,1)==p2(1,1)
+index1 = all(bsxfun(@eq,p2,data_approach(:,1:2)),2);
+RefoldPoint = data_approach(index1,:);
+StartPoint = handles.StartPoint;
+dF = abs(RefoldPoint(1,2)-StartPoint(1,2));
+dt = abs(RefoldPoint(1,3)-StartPoint(1,3));
+loading_rate = dF/dt;
+
+HozLineX = RefoldPoint(1,1)-50:0.05:RefoldPoint(1,1);
+HozLineY = ones(size(HozLineX))*RefoldPoint(1,2);
+[xout,yout] = intersections(data_approach(:,1),data_approach(:,2),HozLineX,HozLineY,1);
+% average the intersection points, after remobing the 1st intersection
+% points, which is the unfolding point
+if length(xout)>=3
+    xout_mean = mean(xout(2:end-1)); yout_mean = mean(yout(2:end-1));
+else
+    xout_mean = xout(1); yout_mean = yout(1);
+end
+
+hold on
+plot(HozLineX,HozLineY,':m','LineWidth',1.5);
+% plot(xout,yout,'r.','markersize',18)
+plot(xout_mean, yout_mean, 'og','markersize',4,'MarkerFaceColor','g')
+hold off
+
+set(handles.refold_force,'string',num2str(RefoldPoint(1,2),'%5.2f'));
+set(handles.loading_rate_2,'string',num2str(loading_rate,'%5.2f'));
+set(handles.extension2,'string',num2str(RefoldPoint(1,1)-xout_mean,'%5.2f'));
+
+handles.RefoldPoint = RefoldPoint;
+handles.IntersectPoint = [xout_mean yout_mean];
+handles.RefoldDistance = RefoldPoint(1,1)-xout_mean;
+guidata(hObject, handles);
 
 
 % --- Executes on button press in intersect_point_2.
@@ -461,6 +537,16 @@ function intersect_point_2_Callback(hObject, eventdata, handles)
 % hObject    handle to intersect_point_2 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+dcm_obj = datacursormode(gcf);
+info = getCursorInfo(dcm_obj);
+IntersectPoint = info.Position;
+RefoldPoint = handles.RefoldPoint;
+refold_distance = abs(IntersectPoint(1,1)-RefoldPoint(1,1));
+set(handles.extension2,'string',num2str(refold_distance,'%5.2f'));
+
+handles.IntersectPoint = IntersectPoint;
+handles.RefoldDistance = refold_distance;
+guidata(hObject, handles);
 
 
 % --- Executes on button press in save_refold.
@@ -468,6 +554,44 @@ function save_refold_Callback(hObject, eventdata, handles)
 % hObject    handle to save_refold (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+global filename fid_refold ExpDate
+
+handles.refolding_num = handles.refolding_num+1;
+speed = handles.speed;
+DistCorFactor = handles.DistCorFactor;
+DistCorFactorSTD = handles.DistCorFactorSTD;
+ForceCorFactor = handles.ForceCorFactor;
+index_curves = handles.index_curves;
+ForceNum = index_curves(handles.ForceIndex);
+StartPoint = handles.StartPoint;
+RefoldPoint = handles.RefoldPoint;
+refold_dist = handles.RefoldDistance;
+dF = RefoldPoint(1,2)-StartPoint(1,2);
+dt = RefoldPoint(1,3)-StartPoint(1,3);
+loading_rate = abs(dF/dt);
+% dx = RefoldPoint(1,1)-StartPoint(1,1);
+
+Force_LR_refold_all = ['data/00 v' num2str(speed) '_refold.csv'];
+if exist(Force_LR_refold_all,'file')==2 % if file exists
+    fid_refold = fopen(Force_LR_refold_all, 'a+'); % append new results
+else
+    fid_refold = fopen(Force_LR_refold_all, 'w+');
+    fprintf(fid_refold, '%s,%s,%s,%s,%s,%s,%s,%s,%s\r\n',...
+        'LR(N/s)', 'Refold_F(N)', 'Refold_D(m)', 'Time(s)',...
+        'Curve#', 'FileName', 'Date', 'F_cor', 'Ext_cor');
+end
+
+fprintf(fid_refold,'%10.4e, %10.4e, %10.4e, %6.3f, %3d, %s, %s, %.4f, %.4f\r\n',...
+    loading_rate*1e-12, RefoldPoint(1,2)*1e-12, refold_dist*1e-9, dt, ...
+    ForceNum, filename, ExpDate, ForceCorFactor, DistCorFactor);
+fclose(fid_refold);
+
+xLimits = get(gca,'XLim');
+yLimits = get(gca,'YLim');
+
+handles.axisRangeZoomed = [xLimits yLimits];
+handles.RefoldPoints(handles.refolding_num,:) = [RefoldPoint, refold_dist, loading_rate];
+guidata(hObject, handles);
 
 
 % --- Executes on button press in start_point_3.
@@ -475,12 +599,41 @@ function start_point_3_Callback(hObject, eventdata, handles)
 % hObject    handle to start_point_3 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+data_retract = handles.data_retract;
+dcm_obj = datacursormode(gcf);
+info = getCursorInfo(dcm_obj);
+p0 = info.Position;
+% index0 = data_retract(:,1)==p0(1,1);
+index0 = all(bsxfun(@eq,p0,data_retract(:,1:2)),2);
+StartPoint = data_retract(index0,:);
+
+handles.StartPoint = StartPoint;
+guidata(hObject, handles);
 
 % --- Executes on button press in rupture_point.
 function rupture_point_Callback(hObject, eventdata, handles)
 % hObject    handle to rupture_point (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+data_retract = handles.data_retract;
+dcm_obj = datacursormode(gcf);
+info = getCursorInfo(dcm_obj);
+p3 = info.Position;
+% index1 = data_retract(:,1)==p3(1,1);
+index1 = all(bsxfun(@eq,p3,data_retract(:,1:2)),2);
+RupturePoint = data_retract(index1,:);
+StartPoint = handles.StartPoint;
+dF = RupturePoint(1,2)-StartPoint(1,2);
+dt = RupturePoint(1,3)-StartPoint(1,3);
+loading_rate = dF/dt;
+dx = RupturePoint(1,1)-StartPoint(1,1);
+
+set(handles.rupture_force,'string',num2str(RupturePoint(1,2),'%5.2f'));
+set(handles.loading_rate_3,'string',num2str(loading_rate,'%5.2f'));
+set(handles.extension3,'string',num2str(dx,'%5.2f'));
+
+handles.RupturePoint = RupturePoint;
+guidata(hObject, handles);
 
 
 % --- Executes on button press in save_rupture.
@@ -488,6 +641,44 @@ function save_rupture_Callback(hObject, eventdata, handles)
 % hObject    handle to save_rupture (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+global filename fid_rupture ExpDate
+
+handles.rupture_num = handles.rupture_num+1;
+speed = handles.speed;
+DistCorFactor = handles.DistCorFactor;
+DistCorFactorSTD = handles.DistCorFactorSTD;
+ForceCorFactor = handles.ForceCorFactor;
+index_curves = handles.index_curves;
+ForceNum = index_curves(handles.ForceIndex);
+StartPoint = handles.StartPoint;
+RupturePoint = handles.RupturePoint;
+dF = RupturePoint(1,2)-StartPoint(1,2);
+dt = RupturePoint(1,3)-StartPoint(1,3);
+loading_rate = dF/dt;
+dx = RupturePoint(1,1)-StartPoint(1,1);
+
+Force_LR_rupture_all = ['data/00 v' num2str(speed) '_rupture.csv'];
+if exist(Force_LR_rupture_all,'file')==2 % if file exists
+    fid_rupture = fopen(Force_LR_rupture_all, 'a+'); % append new results
+else
+    fid_rupture = fopen(Force_LR_rupture_all, 'w+');
+    fprintf(fid_rupture, '%s,%s,%s,%s,%s,%s,%s,%s,%s\r\n',...
+        'LR(N/s)', 'Rupture(N)', 'Rupture_D(m)', 'Time(s)',...
+        'Curve#', 'FileName', 'Date', 'F_cor', 'Ext_cor');
+end
+
+fprintf(fid_rupture,'%10.4e, %10.4e, %10.4e, %6.3f, %3d, %s, %s, %.4f, %.4f\r\n',...
+    loading_rate*1e-12, RupturePoint(1,2)*1e-12, dx*1e-9, dt,...
+    ForceNum, filename, ExpDate, ForceCorFactor, DistCorFactor);
+fclose(fid_rupture);
+
+xLimits = get(gca,'XLim');
+yLimits = get(gca,'YLim');
+
+handles.axisRangeZoomed = [xLimits yLimits];
+handles.RupturePoints(handles.rupture_num,:) = [RupturePoint, dx, loading_rate];
+guidata(hObject, handles);
+
 
 % --- Executes on button press in save_figure.
 function save_figure_Callback(hObject, eventdata, handles)
@@ -496,8 +687,8 @@ function save_figure_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 % create a new figure for saving
 global filename file_path ExpDate
-Index_curves = handles.Index_curves;
-ForceNum = Index_curves(handles.ForceIndex);
+index_curves = handles.index_curves;
+ForceNum = index_curves(handles.ForceIndex);
 formatSpec = '%5.2f'; % set display format for parameters
 InfoOnFig = {};
 fig = figure('visible','off');
@@ -789,9 +980,6 @@ function unfold_force_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to unfold_force (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
@@ -806,9 +994,6 @@ function refold_force_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to refold_force (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
@@ -823,9 +1008,6 @@ function rupture_force_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to rupture_force (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
@@ -938,14 +1120,14 @@ function previous_file_Callback(hObject, eventdata, handles)
 % hObject    handle to previous_file (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global file_path Index_curves
-if handles.ForceIndex>1 && length(Index_curves)>1
+global file_path index_curves
+if handles.ForceIndex>1 && length(index_curves)>1
     % read data file(s)
     handles.ForceIndex = handles.ForceIndex - 1;
 else
     handles.ForceIndex = handles.ForceIndex;
 end
-ForceNum = Index_curves(handles.ForceIndex);
+ForceNum = index_curves(handles.ForceIndex);
 
 single_cycle_file = [file_path 'Dist_Force_Time '];
 single_cycle_smooth_file = [file_path 'DFT '];
@@ -1013,7 +1195,7 @@ if exist(str1, 'file') == 2 %
 end
 hold off
 xlabel('Extension (nm)');ylabel('Force (pN)');
-title(['Force vs Extension (# ' num2str(Index_curves(handles.ForceIndex)) ')'])
+title(['Force vs Extension (# ' num2str(index_curves(handles.ForceIndex)) ')'])
 axis(handles.axisRangeZoomed);
 %     grid on
 %     datacursormode on;
@@ -1032,7 +1214,7 @@ function curve_selection_SelectionChangeFcn(hObject, eventdata, handles)
 %	OldValue: handle of the previously selected object or empty if none was selected
 %	NewValue: handle of the currently selected object
 % handles    structure with handles and user data (see GUIDATA)
-Index_curves = handles.Index_curves;
+index_curves = handles.index_curves;
 xLimits = get(gca,'XLim'); yLimits = get(gca,'YLim');
 
 handles.h1 = plot(handles.data_retract(:,1),handles.data_retract(:,2),'-r');
@@ -1057,7 +1239,7 @@ switch get(eventdata.NewValue,'Tag') % Get Tag of selected object.
         delete(handles.h1)
 end
 xlabel('Extension (nm)');ylabel('Force (pN)');
-title(['Force vs Extension (# ' num2str(Index_curves(handles.ForceIndex)) ')'])
+title(['Force vs Extension (# ' num2str(index_curves(handles.ForceIndex)) ')'])
 axis([xLimits yLimits]);
 
 
@@ -1069,9 +1251,9 @@ global file_path
 single_cycle_file = [ file_path 'Dist_Force_Time ']; % one approaching/retracting process
 single_cycle_smooth_file = [ file_path 'DFT ']; % one approaching/retracting process
 
-Index_curves = handles.Index_curves;
+index_curves = handles.index_curves;
 ForceNum = str2double(get(handles.go_curve,'String'));
-ForceIndex = find(Index_curves==ForceNum);
+ForceIndex = find(index_curves==ForceNum);
 handles.ForceIndex = ForceIndex;
 
 str1 = [single_cycle_file num2str(ForceNum) 'A.txt'];
@@ -1134,7 +1316,7 @@ if exist(str1, 'file') == 2 %
     hold off
 end
 xlabel('Extension (nm)');ylabel('Force (pN)');
-title(['Force vs Extension (# ' num2str(Index_curves(handles.ForceIndex)) ')'])
+title(['Force vs Extension (# ' num2str(index_curves(handles.ForceIndex)) ')'])
 axis(handles.axisRange);
 % grid on
 
@@ -1160,7 +1342,7 @@ function smooth_span_Callback(hObject, eventdata, handles)
 % hObject    handle to smooth_span (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-Index_curves = handles.Index_curves;
+index_curves = handles.index_curves;
 smoothSpan = str2double(get(hObject,'String'));
 retract_dft = handles.data_retract_cor;
 retract_f_smooth = smooth(retract_dft(:,2), smoothSpan);
@@ -1187,7 +1369,7 @@ else
     %     legend('Retract','Location','NorthEast')
 end
 xlabel('Extension (nm)');ylabel('Force (pN)');
-title(['Force vs Extension (# ' num2str(Index_curves(handles.ForceIndex)) ')'])
+title(['Force vs Extension (# ' num2str(index_curves(handles.ForceIndex)) ')'])
 axis([xLimits yLimits]);
 
 handles.smoothSpan = smoothSpan;
@@ -1212,9 +1394,9 @@ function update_force_Callback(hObject, eventdata, handles)
 % hObject    handle to update_force (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global filename Index_curves ExpDate
+global filename index_curves ExpDate
 % filename = evalin('base', 'filename');
-% Index_curves = handles.Index_curves;
+% index_curves = handles.index_curves;
 newForceCorFactor = str2double(get(handles.force_cor_factor,'String'));
 
 retract_dft_smooth = handles.data_retract;
@@ -1248,7 +1430,7 @@ if handles.ApproachExist == 1
 end
 hold off
 xlabel('Extension (nm)');ylabel('Force (pN)');
-title(['Force vs Extension (# ' num2str(Index_curves(handles.ForceIndex)) ')'])
+title(['Force vs Extension (# ' num2str(index_curves(handles.ForceIndex)) ')'])
 axis(handles.axisRange);
 % grid on
 
@@ -1334,9 +1516,9 @@ guidata(hObject, handles);
 
 
 function del_bad_curve_Callback(hObject, eventdata, handles)
-global file_path Index_curves
-Index_curves = handles.Index_curves;
-ForceNum = Index_curves(handles.ForceIndex);
+global file_path index_curves
+index_curves = handles.index_curves;
+ForceNum = index_curves(handles.ForceIndex);
 str1 = [file_path 'Dist_Force_Time ' num2str(ForceNum) 'A.txt'];
 str2 = [file_path 'Dist_Force_Time ' num2str(ForceNum) 'R.txt'];
 if exist(str1, 'file')==2
@@ -1345,16 +1527,16 @@ end
 if exist(str2, 'file')==2
     delete(str2);
 end
-% update Index_curves, by removing the ForceNum just deleted
-% Index_curves(handles.ForceIndex) = [];
-handles.Index_curves(handles.Index_curves == ForceNum) = [];
+% update index_curves, by removing the ForceNum just deleted
+% index_curves(handles.ForceIndex) = [];
+handles.index_curves(handles.index_curves == ForceNum) = [];
 handles.ForceIndex = handles.ForceIndex-1;
-assignin('base', 'Index_curves', handles.Index_curves)
+assignin('base', 'index_curves', handles.index_curves)
 guidata(hObject, handles);
 
 
 function set_average_points_Callback(hObject, eventdata, handles)
-Index_curves = handles.Index_curves;
+index_curves = handles.index_curves;
 smoothSpan = handles.smoothSpan;
 retract_dft = handles.data_retract_cor;
 retract_f_smooth = smooth(retract_dft(:,2), smoothSpan);
@@ -1381,7 +1563,7 @@ else
 end
 hold off
 xlabel('Extension (nm)');ylabel('Force (pN)');
-title(['Force vs Extension (# ' num2str(Index_curves(handles.ForceIndex)) ')'])
+title(['Force vs Extension (# ' num2str(index_curves(handles.ForceIndex)) ')'])
 axis([xLimits yLimits]);
 
 handles.smoothSpan = smoothSpan;
@@ -1390,7 +1572,7 @@ guidata(hObject, handles);
 
 
 function shift_or_not_SelectionChangedFcn(hObject, eventdata, handles)
-Index_curves = handles.Index_curves;
+index_curves = handles.index_curves;
 xLimits = get(gca,'XLim'); yLimits = get(gca,'YLim');
 handles.shiftDist = str2double(get(handles.shift_dist,'String'));
 handles.h1 = plot(handles.data_retract(:,1),handles.data_retract(:,2),'-r');
@@ -1404,7 +1586,7 @@ switch get(eventdata.NewValue,'Tag') % Get Tag of selected object.
 end
 hold off
 xlabel('Extension (nm)');ylabel('Force (pN)');
-title(['Force vs Extension (# ' num2str(Index_curves(handles.ForceIndex)) ')'])
+title(['Force vs Extension (# ' num2str(index_curves(handles.ForceIndex)) ')'])
 axis([xLimits yLimits]);
 
 function shift_or_not_CreateFcn(hObject, eventdata, handles)
@@ -1435,8 +1617,8 @@ close all;
 
 function del_next_Callback(hObject, eventdata, handles)
 global file_path
-Index_curves = handles.Index_curves;
-ForceNum = Index_curves(handles.ForceIndex);
+index_curves = handles.index_curves;
+ForceNum = index_curves(handles.ForceIndex);
 str1 = [file_path 'Dist_Force_Time ' num2str(ForceNum) 'A.txt'];
 str2 = [file_path 'Dist_Force_Time ' num2str(ForceNum) 'R.txt'];
 if exist(str1, 'file')==2
@@ -1445,19 +1627,19 @@ end
 if exist(str2, 'file')==2
     delete(str2);
 end
-% update Index_curves, by removing the ForceNum just deleted
-% Index_curves(handles.ForceIndex) = [];
-handles.Index_curves(handles.Index_curves == ForceNum) = [];
-% Index_curves(handles.Index_curves == ForceNum) = [];
-assignin('base', 'Index_curves', handles.Index_curves)
+% update index_curves, by removing the ForceNum just deleted
+% index_curves(handles.ForceIndex) = [];
+handles.index_curves(handles.index_curves == ForceNum) = [];
+% index_curves(handles.index_curves == ForceNum) = [];
+assignin('base', 'index_curves', handles.index_curves)
 
-Index_curves = handles.Index_curves;
-% if handles.ForceIndex<length(Index_curves) && length(Index_curves)>1
+index_curves = handles.index_curves;
+% if handles.ForceIndex<length(index_curves) && length(index_curves)>1
 %     handles.ForceIndex = handles.ForceIndex + 1;
 % else
 %     handles.ForceIndex = handles.ForceIndex;
 % end
-ForceNum = Index_curves(handles.ForceIndex);
+ForceNum = index_curves(handles.ForceIndex);
 
 single_cycle_file = [file_path 'Dist_Force_Time '];
 single_cycle_smooth_file = [file_path 'DFT '];
@@ -1525,7 +1707,7 @@ if exist(str1, 'file') == 2 %
 end
 hold off
 xlabel('Extension (nm)');ylabel('Force (pN)');
-title(['Force vs Extension (# ' num2str(Index_curves(handles.ForceIndex)) ')'])
+title(['Force vs Extension (# ' num2str(index_curves(handles.ForceIndex)) ')'])
 axis(handles.axisRangeZoomed);
 
 handles.unfolding_num = 0;
@@ -1546,8 +1728,8 @@ global file_path
 single_cycle_file = [ file_path 'Dist_Force_Time ']; % one approaching/retracting process
 single_cycle_smooth_file = [ file_path 'DFT ']; % one approaching/retracting process
 
-Index_curves = handles.Index_curves;
-ForceNum = Index_curves(1);
+index_curves = handles.index_curves;
+ForceNum = index_curves(1);
 ForceIndex = 1;
 handles.ForceIndex = ForceIndex;
 
@@ -1611,7 +1793,7 @@ if exist(str1, 'file') == 2 %
     hold off
 end
 xlabel('Extension (nm)');ylabel('Force (pN)');
-title(['Force vs Extension (# ' num2str(Index_curves(handles.ForceIndex)) ')'])
+title(['Force vs Extension (# ' num2str(index_curves(handles.ForceIndex)) ')'])
 axis(handles.axisRange);
 % grid on
 
@@ -1625,9 +1807,9 @@ global file_path
 single_cycle_file = [ file_path 'Dist_Force_Time ']; % one approaching/retracting process
 single_cycle_smooth_file = [ file_path 'DFT ']; % one approaching/retracting process
 
-Index_curves = handles.Index_curves;
-ForceNum = Index_curves(end);
-ForceIndex = length(Index_curves);
+index_curves = handles.index_curves;
+ForceNum = index_curves(end);
+ForceIndex = length(index_curves);
 handles.ForceIndex = ForceIndex;
 
 str1 = [single_cycle_file num2str(ForceNum) 'A.txt'];
@@ -1690,7 +1872,7 @@ if exist(str1, 'file') == 2 %
     hold off
 end
 xlabel('Extension (nm)');ylabel('Force (pN)');
-title(['Force vs Extension (# ' num2str(Index_curves(handles.ForceIndex)) ')'])
+title(['Force vs Extension (# ' num2str(index_curves(handles.ForceIndex)) ')'])
 axis(handles.axisRange);
 % grid on
 
