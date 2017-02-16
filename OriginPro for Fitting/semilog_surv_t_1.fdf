@@ -1,0 +1,101 @@
+
+
+[General Information]
+Function Name = SemiLog_Surv_T_1
+Brief Description = Linear fit of semi-log survival freq vs lifetime (one state)
+Function Source = N/A
+Number Of Parameters = 2
+Function Type = User-Defined
+Function Form = Expression
+Path = 
+Number Of Independent Variables = 1
+Number Of Dependent Variables = 1
+Function Model = Explicit
+
+
+[Fitting Parameters]
+Names = k_off,b
+Initial Values = 1(V),0(V)
+Meanings = ?,?
+Lower Bounds = --(I, Off),--(I, Off)
+Upper Bounds = --(I, Off),--(I, Off)
+Naming Method = User-Defined
+Number Of Significant Digits = 0,0
+Unit = ,
+Format = --,--
+CustomDisplay = --,--
+
+
+[Independent Variables]
+x = 
+
+
+[Dependent Variables]
+y = 
+
+
+[Formula]
+-k_off*x+b
+
+
+[Constraints]
+
+
+[Initializations]
+
+
+[After Fitting]
+
+
+[Constants]
+
+
+[Controls]
+General Linear Constraints = 0
+Initialization Scripts = 0
+Scripts After Fitting = 0
+Number Of Duplicates = N/A
+Duplicate Offset = N/A
+Duplicate Unit = N/A
+Generate Curves After Fitting = 1
+Curve Point Spacing = Uniform on X-Axis Scale
+Generate Peaks After Fitting = 1
+Generate Peaks During Fitting = 1
+Generate Peaks with Baseline = 1
+Paste Parameters to Plot After Fitting = 1
+Paste Parameters to Notes Window After Fitting = 1
+Generate Residuals After Fitting = 0
+Keep Parameters = 0
+Compile On Param Change Script = 0
+Enable Parameters Initialization = 1
+Treat All Numbers As Double = 1
+
+
+[Compile Function]
+Compile = 0
+Compile Parameters Initialization = 1
+OnParamChangeScriptsEnabled = 0.
+
+
+[Parameters Initialization]
+//Code to be executed to initialize parameters
+
+
+[Origin C Function Header]
+
+
+[Origin C Parameter Initialization Header]
+
+
+[Derived Parameter Settings]
+Unit = 
+Names = 
+Meanings = 
+
+
+
+[QuickCheck]
+x=1
+k_off=1
+b=0
+

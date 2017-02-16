@@ -1,0 +1,104 @@
+
+
+[General Information]
+Function Name = Zhu_model
+Brief Description = 
+Function Source = N/A
+Number Of Parameters = 2
+Function Type = User-Defined
+Function Form = Expression
+Path = 
+Number Of Independent Variables = 1
+Number Of Dependent Variables = 1
+FunctionModel = Explicit
+
+
+[Fitting Parameters]
+Names = beta,k
+Initial Values = 0.5(V),0.5(V)
+Meanings = ?,?
+Lower Bounds = 0.1(X, On),0.1(I, On)
+Upper Bounds = 10(I, On),1(X, On)
+Naming Method = User-Defined
+Number Of Significant Digits = 0,0
+Unit = ,
+Format = --,--
+CustomDisplay = --,--
+
+
+[Independent Variables]
+x = 
+
+
+[Dependent Variables]
+y = 
+
+
+[Formula]
+1-exp(-beta*(1-exp(-k*x)))
+
+
+[Constraints]
+
+
+[Initializations]
+
+
+[After Fitting]
+
+
+[Constants]
+
+
+[Controls]
+General Linear Constraints = 0
+Initialization Scripts = off
+Scripts After Fitting = off
+Number Of Duplicates = N/A
+Duplicate Offset = N/A
+Duplicate Unit = N/A
+Generate Curves After Fitting = Yes
+Curve Point Spacing = Uniform on X-Axis Scale
+Generate Peaks After Fitting = Yes
+Generate Peaks During Fitting = Yes
+Generate Peaks with Baseline = Yes
+Paste Parameters to Plot After Fitting = Yes
+Paste Parameters to Notes Window After Fitting = Yes
+Generate Residuals After Fitting = No
+Keep Parameters = No
+Compile On Param Change Script = off
+Enable Parameters Initialization = 1
+Treat All Numbers As Double = on
+
+
+
+[Compile Function]
+Compile = 0
+Compile Parameters Initialization = 1
+OnParamChangeScriptsEnabled = 0.
+
+
+[Parameters Initialization]
+//Code to be executed to initialize parameters
+
+
+[Origin C Function Header]
+
+
+[Origin C Parameter Initialization Header]
+
+
+
+
+
+[Derived Parameter Settings]
+Unit = 
+Names = 
+Meanings = 
+
+
+
+[QuickCheck]
+x=1
+beta=0.5
+k=0.5

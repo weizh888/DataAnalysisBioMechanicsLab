@@ -1,0 +1,112 @@
+
+
+[General Information]
+Function Name = NonSI_Ln_t_v_1_2
+Brief Description = nu = 1/2
+Function Source = N/A
+Number Of Parameters = 3
+Function Type = User-Defined
+Function Form = Equations
+Path = 
+Number Of Independent Variables = 1
+Number Of Dependent Variables = 1
+Function Model = Explicit
+FunctionPrev = miu1
+
+
+[Fitting Parameters]
+Names = t0,x0,G0
+Initial Values = 1(V),0.5(V),10(V)
+Meanings = ?,?,?
+Lower Bounds = 0(X, On),0(X, On),0(X, On)
+Upper Bounds = --(I, Off),--(I, Off),--(I, Off)
+Naming Method = User-Defined
+Number Of Significant Digits = 0,0,0
+Unit = s,A,kB*T
+Format = --,--,--
+CustomDisplay = --,--,--
+
+
+[Independent Variables]
+f = 
+
+
+[Dependent Variables]
+Ln_t = 
+
+
+[Formula]
+Ln_t = ln(t0) + (-1)*ln(1-1/2*f*1e-12*x0*1e-9/G0/kB/T) - G0*(1-(1-1/2*f*1e-12*x0*1e-9/G0/kB/T)^2)
+
+
+[Constraints]
+
+
+[Initializations]
+
+
+[After Fitting]
+
+
+[Constants]
+kB=1.38065e-023
+T=298.15
+
+
+[Controls]
+General Linear Constraints = 0
+Initialization Scripts = 0
+Scripts After Fitting = 0
+Number Of Duplicates = N/A
+Duplicate Offset = N/A
+Duplicate Unit = N/A
+Generate Curves After Fitting = 1
+Curve Point Spacing = Uniform on X-Axis Scale
+Generate Peaks After Fitting = 1
+Generate Peaks During Fitting = 1
+Generate Peaks with Baseline = 1
+Paste Parameters to Plot After Fitting = 1
+Paste Parameters to Notes Window After Fitting = 1
+Generate Residuals After Fitting = 0
+Keep Parameters = 0
+Compile On Param Change Script = 1
+Enable Parameters Initialization = 1
+Treat All Numbers As Double = 1
+
+
+[Compile Function]
+Compile = 0
+Compile Parameters Initialization = 1
+OnParamChangeScriptsEnabled = 0.
+
+
+[Parameters Initialization]
+//Code to be executed to initialize parameters
+
+
+[Origin C Function Header]
+
+
+[Origin C Parameter Initialization Header]
+
+
+[Derived Parameter Settings]
+Unit = 
+Names = 
+Meanings = 
+
+
+[References]
+lifetime: s; force: N
+t0: s; x0: nm; G0: kB.T
+
+
+[LabTalk Functions Definition and Initializations]
+
+
+[QuickCheck]
+f=1
+t0=1
+x0=0.5
+G0=10
+
