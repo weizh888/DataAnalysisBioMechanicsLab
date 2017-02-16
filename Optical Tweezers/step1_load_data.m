@@ -138,9 +138,8 @@ switch choice
         end
         delete(['data/' filename 'COM.txt'])
         close all; clc;
-        break;
     case 'Close'
-        close all; break;
+        close all;
     case 'Yes'
         UsefullData = 1;
 end
