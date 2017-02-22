@@ -3,7 +3,7 @@
 
 close all; clc;
 clearvars -except filename data_files SpeedValue Min_Height1 Min_Height2 minpeak_distance style threshold_force PeakInfo ExpDate
-global filename file_path ExpDate threshold_force
+global filename file_path ExpDate
 
 if ~exist('filename','var') || isempty(filename)
     filename = input('Please input the data file to analyze: \n', 's');
