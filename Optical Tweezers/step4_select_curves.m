@@ -3,7 +3,7 @@
 
 close all; clc;
 clearvars -except filename data_files SpeedValue Min_Height1 Min_Height2 minpeak_distance style threshold_force PeakInfo ExpDate
-global filename file_path ExpDate
+global filename file_path ExpDate threshold_force
 
 if ~exist('filename','var') || isempty(filename)
     filename = input('Please input the data file to analyze: \n', 's');
@@ -29,19 +29,19 @@ distance = new_data(:,2);
 force = new_data(:,3);
 
 % threshold_force = 5; % define a max force to decide whether to show the force-extension curve
-Index_curves = [];
-TotalCycleNum = floor((length(data_peaks)+1)/2);
-for kk = 1:TotalCycleNum
+index_curves = [];
+total_cycles = floor((length(data_peaks)+1)/2);
+for kk = 1:total_cycles
     str1 = [single_cycle_file num2str(kk) 'A.txt'];
     str2 = [single_cycle_file num2str(kk) 'R.txt'];
-    % only analyze the data when retract curves exist
-    if exist(str2, 'file') == 2
+    % Only analyze the data when retract curves exist.
+    if exist(str2, 'file')==2
         data_retract = dlmread(str2);
-        if exist(str1, 'file') == 2 % if approach file exists
+        if exist(str1, 'file')==2 % If approach file exists.
             data_approach = dlmread(str1);
         end
-        if max(data_retract(:,2) >= threshold_force) % decide whether something was pulled
-            Index_curves = [Index_curves; kk]; % Add useful curve index
+        if max(data_retract(:,2) >= threshold_force) % Decide whether something was pulled.
+            index_curves = [index_curves; kk]; % Add useful curve index.
         else
             if exist(str1, 'file')==2
                 delete(str1);
@@ -58,5 +58,5 @@ fprintf(fid, 'Date:\n%s\n', ExpDate);
 fprintf(fid, 'Filename:\n%s\n', filename);
 fprintf(fid, 'Pulling Speed (nm/s):\n%.2f\n', SpeedValue);
 fprintf(fid, 'Seclected Curves:\n');
-fprintf(fid, '%d ', Index_curves);
+fprintf(fid, '%d ', index_curves);
 fclose(fid);
