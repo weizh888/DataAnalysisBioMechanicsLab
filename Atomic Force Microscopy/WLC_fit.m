@@ -95,7 +95,7 @@ handles.source_files = source_files;
 handles.file_path = 'data/';
 handles.fig_path = 'figure/';
 if ~exist(handles.file_path, 'dir')
-    mkdir(fn)
+    mkdir(handles.file_path)
 end
 if ~exist(handles.fig_path, 'dir')
     mkdir(handles.fig_path)
