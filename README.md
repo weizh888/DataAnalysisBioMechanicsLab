@@ -14,14 +14,16 @@ Preprocess the data, following the steps:
 Check the Manuals.
 
 ## Model Fitting
-- Worm-Like-Chain (WLC) Model
+### Worm-Like-Chain (WLC) Model
 
   The model is based on [J. F. Marko, E. D. Siggia (1995)](http://www.physics.rockefeller.edu/siggia/Publications/1990-9_files/markoMacromol1995.pdf).
 
-- Bell-Evans Model
+### Bell-Evans Model
 
   Predicts the **linear relationship** between force and log(loading-rate).
 
-  Referred to [Bell GI. (1978)](https://www.ncbi.nlm.nih.gov/pubmed/347575) and [E. Evans and K. Ritchie. (1997)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1184350/).
+  Refer to [Bell GI. (1978)](https://www.ncbi.nlm.nih.gov/pubmed/347575) and [E. Evans and K. Ritchie. (1997)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1184350/).
 
-- Dudko Model
+### Dudko Model
+
+  Refer to [O. K. Dudko, G. Hummer, and A. Szabo. (2006)](https://www.ncbi.nlm.nih.gov/pubmed/16605793).
