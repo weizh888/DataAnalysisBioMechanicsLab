@@ -1,5 +1,7 @@
 # Data Analysis Softwares for Nano-Biomechanics Lab
-# Lehigh University (use MATLAB 2012 and newer versions)
+
+  Lehigh University (use MATLAB 2012 and newer versions)
+
 ## Optical Tweezers
 Preprocess the data, following the steps:
 1. Distance correction, based on pulling speed.
@@ -17,6 +19,7 @@ Check the Manuals.
   The model is based on [J. F. Marko, E. D. Siggia (1995)](http://www.physics.rockefeller.edu/siggia/Publications/1990-9_files/markoMacromol1995.pdf).
 
 - Bell-Evans Model
+
   Predicts the **linear relationship** between force and log(loading-rate).
 
   Referred to [Bell GI. (1978)](https://www.ncbi.nlm.nih.gov/pubmed/347575) and [E. Evans and K. Ritchie. (1997)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1184350/).
