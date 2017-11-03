@@ -1,4 +1,5 @@
-# Data Analysis Softwares for Nano-Biomechanics Lab, Lehigh University (MATLAB 2012 and older)
+# Data Analysis Softwares for Nano-Biomechanics Lab
+# Lehigh University (use MATLAB 2012 and newer versions)
 ## Optical Tweezers
 Preprocess the data, following the steps:
 1. Distance correction, based on pulling speed.
@@ -12,6 +13,6 @@ Check the Manuals.
 
 ## Model Fitting
 - Worm-Like-Chain (WLC) Model Fit
-The model is based on [J. F. Marko, E. D. Siggia (1995)] (http://www.physics.rockefeller.edu/siggia/Publications/1990-9_files/markoMacromol1995.pdf)
+The model is based on [J. F. Marko, E. D. Siggia (1995)](http://www.physics.rockefeller.edu/siggia/Publications/1990-9_files/markoMacromol1995.pdf)
 - Bell-Evans Model
 - Dudko Model
