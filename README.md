@@ -22,7 +22,7 @@ Check the Manuals.
 
 ### Bell-Evans Model
 
-  Predicts the **linear relationship** between force and log(loading-rate).
+  Predicts the **linear relationship** between *force* and *log(loading-rate)*.
 
   Refer to [Bell GI. (1978)](https://www.ncbi.nlm.nih.gov/pubmed/347575) and [E. Evans and K. Ritchie. (1997)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1184350/).
 
