@@ -1,4 +1,6 @@
-# Data Analysis Softwares for Nano-Biomechanics Lab
+# Data Analysis Softwares
+
+  Nano-Biomechanics Lab
 
   Lehigh University (use MATLAB 2012 and newer versions)
 
@@ -16,7 +18,7 @@ Check the Manuals.
 ## Model Fitting
 ### Worm-Like-Chain (WLC) Model
 
-  The model is based on [J. F. Marko, E. D. Siggia (1995)](http://www.physics.rockefeller.edu/siggia/Publications/1990-9_files/markoMacromol1995.pdf).
+  Refer to [J. F. Marko, E. D. Siggia (1995)](http://www.physics.rockefeller.edu/siggia/Publications/1990-9_files/markoMacromol1995.pdf).
 
 ### Bell-Evans Model
 
