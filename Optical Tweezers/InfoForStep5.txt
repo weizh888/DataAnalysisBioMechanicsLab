@@ -1,5 +1,5 @@
 Date:
-2014-02-17
+2014-02-20
 Filename:
 v50b02
 Pulling Speed (nm/s):
