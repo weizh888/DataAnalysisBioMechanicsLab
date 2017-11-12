@@ -10,7 +10,7 @@ date_format = 1;
 % startInd = 12; % '00 F vs LR_v200_unfold.txt'
 % startInd = 4; % '00 v200_unfold.txt'
 startInd = 12;
-speedRange = startInd:startInd+3;
+speedRange = startInd:startInd+3
 existExtensionCol = 1; % If Extension column exists, remove it; else, don't remvove.
 
 % Get a list of all files and folders in this folder.
