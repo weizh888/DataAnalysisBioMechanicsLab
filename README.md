@@ -3,6 +3,10 @@
   Nano-Biomechanics Lab
 
   Lehigh University (use MATLAB 2012 and newer versions)
+  
+  **To start, you can check with the following basic tutorials**:
+  * Repository, Commit, Push: https://youtu.be/8tSS3qf9CPg
+  
 
 ## Optical Tweezers
 Preprocess the data, following the steps:
